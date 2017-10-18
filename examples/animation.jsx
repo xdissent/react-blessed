@@ -13,11 +13,8 @@ class AnimatedBox extends Component {
 
     setInterval(() => {
       const {position, toRight} = this.state,
-            newDirection = (position === (toRight ? 90 : 0)) ?
-              !toRight :
-              toRight,
-            newPosition = newDirection ? position + 1 : position - 1;
-
+        newDirection = position === (toRight ? 90 : 0) ? !toRight : toRight,
+        newPosition = newDirection ? position + 1 : position - 1;
 
       this.setState({
         position: newPosition,
@@ -29,12 +26,14 @@ class AnimatedBox extends Component {
     const position = `${this.state.position}%`;
 
     return (
-      <box top="center"
-           left={position}
-           width="10%"
-           height="20%"
-           border={{type: 'line'}}
-           style={{bg: 'cyan', border: {fg: 'blue'}}} />
+      <box
+        top="center"
+        left={position}
+        width="10%"
+        height="20%"
+        border={{type: 'line'}}
+        style={{bg: 'cyan', border: {fg: 'blue'}}}
+      />
     );
   }
 }

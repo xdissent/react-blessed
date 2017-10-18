@@ -66,12 +66,12 @@ class ReactBlessedIDOperations {
    * @return {BlessedScreen|BlessedNode}    - The node.
    */
   getParent(ID) {
-
     // If the node is root, we return the screen itself
-    if (ID.match(/\./g).length === 1)
-      return this.screen;
+    if (ID.match(/\./g).length === 1) return this.screen;
 
-    const parentID = ID.split('.').slice(0, -1).join('.');
+    const parentID = ID.split('.')
+      .slice(0, -1)
+      .join('.');
     return this.get(parentID);
   }
 

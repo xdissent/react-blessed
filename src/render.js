@@ -1,67 +1,136 @@
-/**
- * React Blessed
- * ==============
- *
- * Exposing the renderer's API.
- */
-import ReactInstanceHandles from 'react/lib/ReactInstanceHandles';
-import ReactElement from 'react/lib/ReactElement';
-import ReactUpdates from 'react/lib/ReactUpdates';
-import ReactBlessedIDOperations from './ReactBlessedIDOperations';
-import invariant from 'invariant';
-import instantiateReactComponent from 'react/lib/instantiateReactComponent';
-import inject from './ReactBlessedInjection';
-import {Screen} from 'blessed';
+// @flow
 
-/**
- * Injecting dependencies.
- */
+import React, {createElement, type Element} from 'react';
+import ReactReconciler from 'react-dom/lib/ReactReconciler';
+import ReactUpdates from 'react-dom/lib/ReactUpdates';
+// import ReactBlessedIDOperations from './ReactBlessedIDOperations';
+import invariant from 'invariant';
+import instantiateReactComponent from 'react-dom/lib/instantiateReactComponent';
+import getHostComponentFromComposite from 'react-dom/lib/getHostComponentFromComposite';
+import inject from './ReactBlessedInjection';
+import ReactBlessedComponent from './ReactBlessedComponent';
+// import {Screen} from 'blessed';
+import type {BlessedRendererOptions} from './ReactBlessedReconcileTransaction';
+import {debounce} from 'lodash';
+
 inject();
 
-/**
- * Renders the given react element with blessed.
- *
- * @param  {ReactElement}   element   - Node to update.
- * @param  {BlessedScreen}  screen    - The screen used to render the app.
- * @return {ReactComponent}           - The rendered component instance.
- */
-function render(element, screen) {
+const defaultBlessedOptions = {
+  title: 'TRULY BLESSD!'
+};
 
-  // Is the given element valid?
-  invariant(
-    ReactElement.isValidElement(element),
-    'render(): You must pass a valid ReactElement.'
+const TopLevelWrapper = function() {};
+TopLevelWrapper.prototype.isReactComponent = {};
+if (process.env.NODE_ENV !== 'production') {
+  TopLevelWrapper.displayName = 'TopLevelWrapper';
+}
+TopLevelWrapper.prototype.render = function() {
+  return <screen>{this.props.child}</screen>;
+};
+TopLevelWrapper.isReactTopLevelWrapper = true;
+
+function mountComponentIntoNode(
+  componentInstance,
+  transaction,
+  hostParent,
+  hostContainerInfo
+) {
+  var image = ReactReconciler.mountComponent(
+    componentInstance,
+    transaction,
+    null,
+    hostContainerInfo,
+    {}
   );
-
-  // Is the given screen valid?
-  invariant(
-    screen instanceof Screen,
-    'render(): You must pass a valid BlessedScreen.'
-  );
-
-  // Creating a root id & creating the screen
-  const id = ReactInstanceHandles.createReactRootID();
-
-  // Mounting the app
-  const component = instantiateReactComponent(element);
-
-  // Injecting the screen
-  ReactBlessedIDOperations.setScreen(screen);
-
-  // The initial render is synchronous but any updates that happen during
-  // rendering, in componentWillMount or componentDidMount, will be batched
-  // according to the current batching strategy.
-  ReactUpdates.batchedUpdates(() => {
-    // Batched mount component
-    const transaction = ReactUpdates.ReactReconcileTransaction.getPooled();
-    transaction.perform(() => {
-      component.mountComponent(id, transaction, {});
-    });
-    ReactUpdates.ReactReconcileTransaction.release(transaction);
-  });
-
-  // Returning the screen so the user can attach listeners etc.
-  return component._instance;
+  componentInstance._renderedComponent._topLevelWrapper = componentInstance;
+  return image;
 }
 
-export {render};
+function batchedMountComponentIntoNode(componentInstance, options) {
+  var transaction = ReactUpdates.ReactReconcileTransaction.getPooled();
+  var image = transaction.perform(
+    mountComponentIntoNode,
+    null,
+    componentInstance,
+    transaction,
+    null,
+    options
+  );
+  ReactUpdates.ReactReconcileTransaction.release(transaction);
+  return image;
+}
+
+class ReactBlessedInstance {
+  _component: ?ReactBlessedComponent;
+
+  constructor(component) {
+    this._component = component;
+  }
+  getInstance() {
+    // console.log('HEYO', this._component._renderedComponent);
+    return (
+      this._component && this._component._renderedComponent.getPublicInstance()
+    );
+  }
+  update(nextElement) {
+    invariant(
+      this._component,
+      "ReactTestRenderer: .update() can't be called after unmount."
+    );
+    var nextWrappedElement = createElement(TopLevelWrapper, {
+      child: nextElement
+    });
+    var component = this._component;
+    ReactUpdates.batchedUpdates(function() {
+      var transaction = ReactUpdates.ReactReconcileTransaction.getPooled();
+      transaction.perform(function() {
+        ReactReconciler.receiveComponent(
+          component,
+          nextWrappedElement,
+          transaction,
+          {}
+        );
+      });
+      ReactUpdates.ReactReconcileTransaction.release(transaction);
+    });
+  }
+  unmount(nextElement) {
+    var component = this._component;
+    ReactUpdates.batchedUpdates(function() {
+      var transaction = ReactUpdates.ReactReconcileTransaction.getPooled();
+      transaction.perform(function() {
+        ReactReconciler.unmountComponent(component, false);
+      });
+      ReactUpdates.ReactReconcileTransaction.release(transaction);
+    });
+    // HACK
+    if (nextElement) this._component = null;
+    this._component = null;
+  }
+  toJSON() {
+    var inst = getHostComponentFromComposite(this._component);
+    if (inst === null) {
+      return null;
+    }
+    return inst.toJSON();
+  }
+}
+
+export const render = (
+  nextElement: Element<any>,
+  options?: BlessedRendererOptions
+): ReactBlessedInstance => {
+  const nextWrappedElement = createElement(TopLevelWrapper, {
+    child: nextElement
+  });
+
+  if (options && options.screen)
+    options.screen.debouncedRender = debounce(() => options.screen.render(), 0);
+  const instance = instantiateReactComponent(nextWrappedElement, false);
+  ReactUpdates.batchedUpdates(
+    batchedMountComponentIntoNode,
+    instance,
+    Object.assign({}, defaultBlessedOptions, options)
+  );
+  return new ReactBlessedInstance(instance);
+};

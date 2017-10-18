@@ -15,7 +15,13 @@
     "type": "git",
     "url": "git+https://github.com/yomguithereal/react-blessed.git"
   },
-  "keywords": ["blessed", "react", "renderer", "cli", "interface"],
+  "keywords": [
+    "blessed",
+    "react",
+    "renderer",
+    "cli",
+    "interface"
+  ],
   "author": "yomguithereal",
   "license": "MIT",
   "bugs": {
@@ -28,6 +34,8 @@
     "babel-preset-env": "^1.6.0",
     "babel-preset-react": "^6.24.1",
     "babel-preset-stage-2": "^6.24.1",
+    "babel-register": "^6.6.0",
+    "blessed": "^0.1.81",
     "eslint": "^4.8.0",
     "eslint-config-prettier": "^2.6.0",
     "eslint-plugin-flowtype": "^2.37.0",
@@ -36,10 +44,8 @@
     "flow-bin": "^0.57.0",
     "flow-typed": "^2.1.5",
     "jest": "^21.2.1",
+    "mocha": "^4.0.1",
     "prettier": "^1.7.4",
-    "babel-register": "^6.6.0",
-    "blessed": "^0.1.81",
-    "mocha": "^2.4.5",
     "react": "^15.6.1",
     "react-dom": "^15.6.1"
   },

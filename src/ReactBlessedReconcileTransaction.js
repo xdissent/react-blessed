@@ -1,37 +1,55 @@
-/**
- * React Blessed Specific React Transaction
- * =========================================
- *
- * React custom reconcile transaction injected by the renderer to enable
- * updates.
- *
- * NOTE: This looks more like a shim than the proper thing actually.
- */
-import CallbackQueue from 'react/lib/CallbackQueue';
+// @flow
+
+import CallbackQueue from 'react-dom/lib/CallbackQueue';
 import PooledClass from 'react/lib/PooledClass';
-import Transaction from 'react/lib/Transaction';
+import Transaction from 'react-dom/lib/Transaction';
+import ReactUpdateQueue from 'react-dom/lib/ReactUpdateQueue';
 import {extend} from 'lodash';
 
+type Blessed = {};
+
+export type BlessedRendererOptions = {
+  title?: string,
+  screen?: Blessed
+};
+
 const ON_BLESSED_READY_QUEUEING = {
-  initialize: function () {
+  initialize: function() {
     this.reactMountReady.reset();
   },
-  close: function () {
+  close: function() {
     this.reactMountReady.notifyAll();
   }
 };
 
-function ReactBlessedReconcileTransaction() {
+const TRANSACTION_WRAPPERS = [ON_BLESSED_READY_QUEUEING];
+
+function ReactBlessedReconcileTransaction(
+  blessedOptions: BlessedRendererOptions
+) {
   this.reinitializeTransaction();
-  this.reactMountReady = CallbackQueue.getPooled(null);
+  this.blessedOptions = blessedOptions;
+  this.reactMountReady = CallbackQueue.getPooled(this);
 }
 
 const Mixin = {
   getTransactionWrappers: function() {
-    return [ON_BLESSED_READY_QUEUEING];
+    return TRANSACTION_WRAPPERS;
   },
   getReactMountReady: function() {
     return this.reactMountReady;
+  },
+  getBlessedOptions: function() {
+    return this.blessedOptions;
+  },
+  getUpdateQueue: function() {
+    return ReactUpdateQueue;
+  },
+  checkpoint: function() {
+    return this.reactMountReady.checkpoint();
+  },
+  rollback: function(checkpoint) {
+    this.reactMountReady.rollback(checkpoint);
   },
   destructor: function() {
     CallbackQueue.release(this.reactMountReady);
@@ -39,9 +57,10 @@ const Mixin = {
   }
 };
 
-extend(
+Object.assign(
   ReactBlessedReconcileTransaction.prototype,
-  Transaction.Mixin,
+  Transaction,
+  ReactBlessedReconcileTransaction,
   Mixin
 );
 
