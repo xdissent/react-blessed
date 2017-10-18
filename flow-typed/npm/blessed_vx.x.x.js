@@ -15,7 +15,19 @@
 
 declare module 'blessed' {
   declare export class Node {
+    style: Object;
+    border: Object;
+    focused: boolean;
     setContent(string): void;
+    setLabel(any): void;
+    setHover(any): void;
+    removeHover(): void;
+    setItems(any): void;
+    setValue(any): void;
+    setProgress(any): void;
+    setData(any): void;
+    focus(): void;
+    select(any): void;
     append(Node): void;
     on(string, Function): void;
     off(string, Function): void;

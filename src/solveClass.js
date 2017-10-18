@@ -1,22 +1,12 @@
-/**
- * React Blessed Classes Solving
- * ==============================
- *
- * Solving a component's classes to apply correct props to an element.
- */
-import {merge, compact} from 'lodash';
+// @flow
 
-/**
- * Solves the given props by applying classes.
- *
- * @param  {object}  props - The component's props.
- * @return {object}        - The solved props.
- */
-export default function solveClass(props) {
+import merge from 'lodash.merge';
+
+export default function solveClass(props: Object): Object {
   let {class: classes, ...rest} = props;
-
-  // Coercing to array & compacting
-  classes = compact([].concat(classes));
-
-  return merge.apply(null, [{}].concat(classes).concat(rest));
+  classes =
+    classes == null || typeof classes !== 'object'
+      ? []
+      : Array.isArray(classes) ? classes.filter(c => c) : [classes];
+  return merge({}, ...classes, rest);
 }

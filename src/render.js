@@ -9,34 +9,39 @@ import invariant from 'invariant';
 import ReactBlessedTopLevelWrapper from './ReactBlessedTopLevelWrapper';
 import ReactBlessedInstance from './ReactBlessedInstance';
 import ReactBlessedScreen from './ReactBlessedScreen';
+import type ReactBlessedComponent from './ReactBlessedComponent';
 import type {Screen as BlessedScreen} from 'blessed';
+import type {ReactInstance, ReactBlessedInstanceComponent} from './types';
 
 function mountComponentIntoNode(
-  componentInstance,
-  transaction,
-  hostParent,
-  hostContainerInfo
+  instance: ReactBlessedInstanceComponent,
+  transaction: any,
+  hostParent: ?ReactBlessedComponent,
+  hostContainerInfo: ReactBlessedScreen
 ) {
   const image = ReactReconciler.mountComponent(
-    componentInstance,
+    instance,
     transaction,
-    null,
+    hostParent,
     hostContainerInfo,
     {}
   );
-  componentInstance._renderedComponent._topLevelWrapper = componentInstance;
+  instance._renderedComponent._topLevelWrapper = instance;
   return image;
 }
 
-function batchedMountComponentIntoNode(componentInstance, options) {
+function batchedMountComponentIntoNode(
+  instance: ReactInstance,
+  hostContainerInfo: ReactBlessedScreen
+) {
   const transaction = ReactUpdates.ReactReconcileTransaction.getPooled();
   const image = transaction.perform(
     mountComponentIntoNode,
     null,
-    componentInstance,
+    instance,
     transaction,
     null,
-    options
+    hostContainerInfo
   );
   ReactUpdates.ReactReconcileTransaction.release(transaction);
   return image;
@@ -48,11 +53,10 @@ export const render = (
 ): ReactBlessedInstance => {
   invariant(screen, 'Could not find blessed screen');
   inject();
-  // $FlowFixMe
-  const wrappedElement = createElement(ReactBlessedTopLevelWrapper, {
+  const wrapped = createElement(ReactBlessedTopLevelWrapper, {
     child: element
   });
-  const instance = instantiateReactComponent(wrappedElement, false);
+  const instance = instantiateReactComponent(wrapped, false);
   ReactUpdates.batchedUpdates(
     batchedMountComponentIntoNode,
     instance,

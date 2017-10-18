@@ -2,7 +2,6 @@ import assert from 'assert';
 import solveClass from '../../src/solveClass';
 
 describe('solveClass', function() {
-
   it('should merge a single class into props.', function() {
     assert.deepEqual(
       solveClass({

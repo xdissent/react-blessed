@@ -2,6 +2,7 @@
 
 import type {Screen as BlessedScreen} from 'blessed';
 import type ReactBlessedScreen from './ReactBlessedScreen';
+import type ReactBlessedComponent from './ReactBlessedComponent';
 
 // React core types
 type DebugID = number;
@@ -53,6 +54,11 @@ export type ReactElement = {
   _self: ReactElement,
   _shadowChildren: any,
   _source: Source
+};
+
+export type ReactBlessedInstanceComponent = {
+  ...$Exact<ReactInstance>,
+  _renderedComponent: ReactBlessedComponent
 };
 
 export type HostContainerInfo = ReactBlessedScreen;

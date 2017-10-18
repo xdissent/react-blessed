@@ -5,14 +5,8 @@ import ReactReconciler from 'react-dom/lib/ReactReconciler';
 import ReactUpdates from 'react-dom/lib/ReactUpdates';
 import invariant from 'invariant';
 import ReactBlessedTopLevelWrapper from './ReactBlessedTopLevelWrapper';
-import type ReactBlessedComponent from './ReactBlessedComponent';
-import type {ReactInstance} from './types';
+import type {ReactBlessedInstanceComponent} from './types';
 import type {Node as BlessedNode, Screen as BlessedScreen} from 'blessed';
-
-type ReactBlessedInstanceComponent = {
-  ...$Exact<ReactInstance>,
-  _renderedComponent: ReactBlessedComponent
-};
 
 export default class ReactBlessedInstance {
   _component: ?ReactBlessedInstanceComponent;
@@ -56,15 +50,23 @@ export default class ReactBlessedInstance {
 
   getNode(): BlessedNode {
     const component = this._component;
-    invariant(component, 'Cannot get instance after unmount');
+    invariant(component, 'Cannot get node after unmount');
     return component._renderedComponent.getPublicInstance();
   }
 
   getScreen(): BlessedScreen {
     const component = this._component;
-    invariant(component, 'Cannot get instance after unmount');
+    invariant(component, 'Cannot get screen after unmount');
     const {screen} = component._renderedComponent._hostContainerInfo || {};
     invariant(screen, 'Could not find blessed screen');
     return screen;
+  }
+
+  render() {
+    const component = this._component;
+    invariant(component, 'Cannot render after unmount');
+    const {render} = component._renderedComponent._hostContainerInfo || {};
+    invariant(render, 'Could not find blessed render');
+    render();
   }
 }

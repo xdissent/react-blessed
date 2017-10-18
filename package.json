@@ -52,6 +52,6 @@
   },
   "dependencies": {
     "invariant": "^2.2.0",
-    "lodash": "^3.x.x"
+    "lodash.merge": "^4.6.0"
   }
 }

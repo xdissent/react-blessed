@@ -6,22 +6,22 @@ import invariant from 'invariant';
 import ReactBlessedReconcileTransaction from './ReactBlessedReconcileTransaction';
 import solveClass from './solveClass';
 import update from './update';
-import type {ReactElement, ReactInstance, HostContainerInfo} from './types';
+import type {
+  ReactElement,
+  ReactBlessedInstanceComponent,
+  HostContainerInfo
+} from './types';
 
 export default class ReactBlessedComponent {
   _currentElement: ReactElement;
-  _renderedChildren: null | Object;
-  _topLevelWrapper: null | ReactInstance;
-  _hostContainerInfo: null | HostContainerInfo;
+  _topLevelWrapper: ?ReactBlessedInstanceComponent = null;
+  _hostContainerInfo: ?HostContainerInfo = null;
   _renderedComponent: ReactBlessedComponent;
-  _blessedNode: null | BlessedNode;
+  _renderedChildren: ?Object = null;
+  _blessedNode: ?BlessedNode = null;
 
   constructor(element: ReactElement) {
     this._currentElement = element;
-    this._renderedChildren = null;
-    this._topLevelWrapper = null;
-    this._hostContainerInfo = null;
-    this._blessedNode = null;
   }
 
   _eventListener = (type: string, ...args: any[]) => {
@@ -36,7 +36,7 @@ export default class ReactBlessedComponent {
 
   mountComponent(
     transaction: ReactBlessedReconcileTransaction,
-    nativeParent: ?ReactBlessedComponent,
+    hostParent: ?ReactBlessedComponent,
     hostContainerInfo: HostContainerInfo,
     context: Object
   ) {
@@ -44,10 +44,10 @@ export default class ReactBlessedComponent {
     invariant(screen, 'Could not find blessed screen');
     invariant(render, 'Could not find blessed render');
 
-    const parent = (nativeParent && nativeParent._blessedNode) || screen;
+    const parent = (hostParent && hostParent._blessedNode) || screen;
     const node = (this._blessedNode = this.createBlessedNode(parent));
 
-    const {content, children} = this.findContentChildren();
+    const {content, children} = this.extractContentChildren();
     node.setContent(content);
 
     // $FlowFixMe
@@ -61,9 +61,8 @@ export default class ReactBlessedComponent {
     context: Object
   ) {
     this._currentElement = nextElement;
-    const {screen, render} = this._hostContainerInfo || {};
+    const {render} = this._hostContainerInfo || {};
     const node = this._blessedNode;
-    invariant(screen, 'Could not find blessed screen');
     invariant(render, 'Could not find blessed render');
     invariant(node, 'Could not find blessed node');
 
@@ -71,7 +70,7 @@ export default class ReactBlessedComponent {
     delete props.children;
     update(node, solveClass(props));
 
-    const {content, children} = this.findContentChildren();
+    const {content, children} = this.extractContentChildren();
     node.setContent(content);
 
     // $FlowFixMe
@@ -82,9 +81,8 @@ export default class ReactBlessedComponent {
   unmountComponent(safely: boolean, skipLifecycle: boolean) {
     // $FlowFixMe
     this.unmountChildren(safely, skipLifecycle);
-    const {screen, render} = this._hostContainerInfo || {};
+    const {render} = this._hostContainerInfo || {};
     const node = this._blessedNode;
-    invariant(screen, 'Could not find blessed screen');
     invariant(render, 'Could not find blessed render');
     invariant(node, 'Could not find blessed node');
     node.off('event', this._eventListener);
@@ -93,7 +91,7 @@ export default class ReactBlessedComponent {
     render();
   }
 
-  findContentChildren(): {content: string, children: any[]} {
+  extractContentChildren(): {content: string, children: any[]} {
     const {props: {children}} = this._currentElement;
     return (children == null
       ? []
