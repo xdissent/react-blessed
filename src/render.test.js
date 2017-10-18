@@ -29,7 +29,7 @@ class TestB extends Component<{}> {
 
 describe('render', () => {
   it('should render', () => {
-    const inst = render(<TestB />, {title: 'HOLYSHIT'});
+    // const inst = render(<TestB />, {title: 'HOLYSHIT'});
     // console.log('GET INST', inst.getInstance());
   });
 });

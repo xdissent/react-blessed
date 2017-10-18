@@ -14,7 +14,22 @@
  */
 
 declare module 'blessed' {
-  declare module.exports: any;
+  declare export class Node {
+    setContent(string): void;
+    append(Node): void;
+    on(string, Function): void;
+    off(string, Function): void;
+    destroy(): void;
+  }
+  declare export class Screen extends Node {
+    render(): void;
+    // HACK
+    debouncedRender(): void;
+  }
+  // HACK
+  declare export default {
+    [string]: ?(Object) => Node
+  }
 }
 
 /**

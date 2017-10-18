@@ -8,7 +8,7 @@ class App extends Component {
       <box
         label="react-blessed demo"
         border={{type: 'line'}}
-        style={{border: {fg: 'cyan'}}}
+        style={{border: {fg: this.props.color}}}
       >
         <InnerBox position="left" />
         <InnerBox position="right" />
@@ -84,6 +84,23 @@ class ProgressBar extends Component {
   }
 }
 
+class App2 extends Component {
+  render() {
+    return (
+      <box
+        label="react-blessed demo"
+        border={{type: 'line'}}
+        style={{border: {fg: 'red'}}}
+      >
+        <InnerBox position="left" />
+        <InnerBox position="right" />
+        <ProgressBar />
+        More random text here...
+      </box>
+    );
+  }
+}
+
 const screen = blessed.screen({
   autoPadding: true,
   smartCSR: true,
@@ -94,4 +111,7 @@ screen.key(['escape', 'q', 'C-c'], function(ch, key) {
   return process.exit(0);
 });
 
-const component = render(<App />, screen);
+const component = render(<App color="cyan" />, screen);
+setTimeout(() => {
+  component.update(<App2 color="red" />);
+}, 2000);

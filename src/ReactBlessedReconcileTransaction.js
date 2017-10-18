@@ -4,14 +4,7 @@ import CallbackQueue from 'react-dom/lib/CallbackQueue';
 import PooledClass from 'react/lib/PooledClass';
 import Transaction from 'react-dom/lib/Transaction';
 import ReactUpdateQueue from 'react-dom/lib/ReactUpdateQueue';
-import {extend} from 'lodash';
-
-type Blessed = {};
-
-export type BlessedRendererOptions = {
-  title?: string,
-  screen?: Blessed
-};
+import type {BlessedRendererOptions} from './types';
 
 const ON_BLESSED_READY_QUEUEING = {
   initialize: function() {
