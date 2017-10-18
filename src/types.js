@@ -1,6 +1,7 @@
 // @flow
 
 import type {Screen as BlessedScreen} from 'blessed';
+import type ReactBlessedScreen from './ReactBlessedScreen';
 
 // React core types
 type DebugID = number;
@@ -54,9 +55,7 @@ export type ReactElement = {
   _source: Source
 };
 
-export type HostContainerInfo = {
-  screen: BlessedScreen
-};
+export type HostContainerInfo = ReactBlessedScreen;
 
 export type BlessedRendererOptions = {
   screen?: BlessedScreen

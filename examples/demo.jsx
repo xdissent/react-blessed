@@ -20,6 +20,7 @@ class App extends Component {
 }
 
 class InnerBox extends Component {
+
   constructor(props) {
     super(props);
 
@@ -27,9 +28,13 @@ class InnerBox extends Component {
       hey: true
     };
 
-    setInterval(() => {
+    this._interval = setInterval(() => {
       this.setState({hey: !this.state.hey});
     }, 1000);
+  }
+
+  componentWillUnmount () {
+    clearInterval(this._interval)
   }
 
   render() {
@@ -57,14 +62,18 @@ class InnerBox extends Component {
 class ProgressBar extends Component {
   constructor(props) {
     super(props);
-
     this.state = {completion: 0};
+  }
 
-    const interval = setInterval(() => {
-      if (this.state.completion >= 100) return clearInterval(interval);
-
+  componentDidMount () {
+    this._interval = setInterval(() => {
+      if (this.state.completion >= 100) return clearInterval(this._interval);
       this.setState({completion: this.state.completion + 10});
     }, 1000);
+  }
+
+  componentWillUnmount () {
+    clearInterval(this._interval)
   }
 
   render() {
@@ -113,5 +122,5 @@ screen.key(['escape', 'q', 'C-c'], function(ch, key) {
 
 const component = render(<App color="cyan" />, screen);
 setTimeout(() => {
-  component.update(<App2 color="red" />);
-}, 2000);
+  component.update(<App2 />);
+}, 5000);

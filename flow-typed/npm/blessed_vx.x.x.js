@@ -23,8 +23,6 @@ declare module 'blessed' {
   }
   declare export class Screen extends Node {
     render(): void;
-    // HACK
-    debouncedRender(): void;
   }
   // HACK
   declare export default {

@@ -47,7 +47,8 @@
     "mocha": "^4.0.1",
     "prettier": "^1.7.4",
     "react": "^15.6.1",
-    "react-dom": "^15.6.1"
+    "react-dom": "^15.6.1",
+    "react-test-renderer": "^15.6.1"
   },
   "dependencies": {
     "invariant": "^2.2.0",

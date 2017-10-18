@@ -1,16 +1,12 @@
 // @flow
 
-import blessed, {Node as BlessedNode, Screen as BlessedScreen} from 'blessed';
-import solveClass from './solveClass';
-import invariant from 'invariant';
+import blessed, {Node as BlessedNode} from 'blessed';
 import ReactMultiChild from 'react-dom/lib/ReactMultiChild';
+import invariant from 'invariant';
 import ReactBlessedReconcileTransaction from './ReactBlessedReconcileTransaction';
-import {groupBy} from 'lodash';
+import solveClass from './solveClass';
 import update from './update';
-
 import type {ReactElement, ReactInstance, HostContainerInfo} from './types';
-
-const CONTENT_TYPES = {string: true, number: true};
 
 export default class ReactBlessedComponent {
   _currentElement: ReactElement;
@@ -19,7 +15,6 @@ export default class ReactBlessedComponent {
   _hostContainerInfo: null | HostContainerInfo;
   _renderedComponent: ReactBlessedComponent;
   _blessedNode: null | BlessedNode;
-  _updating: boolean;
 
   constructor(element: ReactElement) {
     this._currentElement = element;
@@ -27,11 +22,9 @@ export default class ReactBlessedComponent {
     this._topLevelWrapper = null;
     this._hostContainerInfo = null;
     this._blessedNode = null;
-    this._updating = false;
   }
 
   _eventListener = (type: string, ...args: any[]) => {
-    if (this._updating) return;
     const handler = this._currentElement.props[
       'on' + `${type.charAt(0).toUpperCase()}${type.slice(1)}`.replace(/ /g, '')
     ];
@@ -47,21 +40,19 @@ export default class ReactBlessedComponent {
     hostContainerInfo: HostContainerInfo,
     context: Object
   ) {
-    const {screen} = (this._hostContainerInfo = hostContainerInfo);
-    const node = (this._blessedNode = nativeParent
-      ? this.createBlessedNode(nativeParent._blessedNode)
-      : screen);
+    const {screen, render} = (this._hostContainerInfo = hostContainerInfo);
     invariant(screen, 'Could not find blessed screen');
-    invariant(node, 'Could not find blessed node');
+    invariant(render, 'Could not find blessed render');
+
+    const parent = (nativeParent && nativeParent._blessedNode) || screen;
+    const node = (this._blessedNode = this.createBlessedNode(parent));
+
     const {content, children} = this.findContentChildren();
-    if (typeof content === 'string') {
-      if (node instanceof BlessedScreen)
-        throw new Error('Cannot set content on screen');
-      node.setContent(content);
-    }
+    node.setContent(content);
+
     // $FlowFixMe
     this.mountChildren(children, transaction, context);
-    screen.debouncedRender();
+    render();
   }
 
   receiveComponent(
@@ -70,42 +61,57 @@ export default class ReactBlessedComponent {
     context: Object
   ) {
     this._currentElement = nextElement;
-    const {screen} = this._hostContainerInfo || {};
+    const {screen, render} = this._hostContainerInfo || {};
     const node = this._blessedNode;
     invariant(screen, 'Could not find blessed screen');
+    invariant(render, 'Could not find blessed render');
     invariant(node, 'Could not find blessed node');
 
     const {props: {...props}} = nextElement;
-    this._updating = true;
     delete props.children;
-    update(this._blessedNode, solveClass(props));
-    this._updating = false;
+    update(node, solveClass(props));
 
     const {content, children} = this.findContentChildren();
-    if (typeof content === 'string') {
-      if (node instanceof BlessedScreen)
-        throw new Error('Cannot set content on screen');
-      node.setContent(content);
-    }
+    node.setContent(content);
+
     // $FlowFixMe
     this.updateChildren(children, transaction, context);
-    screen.debouncedRender();
+    render();
   }
 
-  findContentChildren(): {content: ?string, children: any[]} {
+  unmountComponent(safely: boolean, skipLifecycle: boolean) {
+    // $FlowFixMe
+    this.unmountChildren(safely, skipLifecycle);
+    const {screen, render} = this._hostContainerInfo || {};
+    const node = this._blessedNode;
+    invariant(screen, 'Could not find blessed screen');
+    invariant(render, 'Could not find blessed render');
+    invariant(node, 'Could not find blessed node');
+    node.off('event', this._eventListener);
+    node.destroy();
+    this._blessedNode = null;
+    render();
+  }
+
+  findContentChildren(): {content: string, children: any[]} {
     const {props: {children}} = this._currentElement;
-    const childrenToUse = children == null ? [] : [].concat(children);
-    const {content = null, realChildren = []} = groupBy(childrenToUse, c => {
-      return CONTENT_TYPES[typeof c] ? 'content' : 'realChildren';
-    });
-    return {
-      content: content == null ? null : content.join(''),
-      children: realChildren
-    };
+    return (children == null
+      ? []
+      : Array.isArray(children) ? children : [children]
+    ).reduce(
+      ({content, children}, child) => {
+        if (typeof child === 'string' || typeof child === 'number') {
+          content += child;
+        } else {
+          children.push(child);
+        }
+        return {content, children};
+      },
+      {content: '', children: []}
+    );
   }
 
-  createBlessedNode(parent: ?BlessedNode): BlessedNode {
-    invariant(parent, 'Could not find parent blessed node');
+  createBlessedNode(parent: BlessedNode): BlessedNode {
     const {props: {...props}, type} = this._currentElement;
     const blessedCreator = blessed[type];
     invariant(
@@ -119,27 +125,12 @@ export default class ReactBlessedComponent {
     return node;
   }
 
-  unmountComponent(safely: boolean, skipLifecycle: boolean) {
-    // $FlowFixMe
-    this.unmountChildren(safely, skipLifecycle);
-    const {screen} = this._hostContainerInfo || {};
-    const node = this._blessedNode;
-    invariant(screen, 'Could not find blessed screen');
-    invariant(node, 'Could not find blessed node');
-    node.off('event', this._eventListener);
-    node.destroy();
-    this._blessedNode = null;
-    screen.debouncedRender();
-  }
-
   getPublicInstance(): BlessedNode {
-    if (!this._blessedNode) throw new Error('Could not find blessed node');
+    invariant(this._blessedNode, 'Could not find blessed node');
     return this._blessedNode;
   }
 
-  getHostNode(...args: any[]): void {
-    console.log('GET HOST NOED', ...args);
-  }
+  getHostNode() {}
 }
 
 Object.assign(ReactBlessedComponent.prototype, ReactMultiChild.Mixin);

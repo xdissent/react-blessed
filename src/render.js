@@ -5,13 +5,11 @@ import ReactReconciler from 'react-dom/lib/ReactReconciler';
 import ReactUpdates from 'react-dom/lib/ReactUpdates';
 import instantiateReactComponent from 'react-dom/lib/instantiateReactComponent';
 import inject from './ReactBlessedInjection';
-import {debounce} from 'lodash';
 import invariant from 'invariant';
 import ReactBlessedTopLevelWrapper from './ReactBlessedTopLevelWrapper';
 import ReactBlessedInstance from './ReactBlessedInstance';
+import ReactBlessedScreen from './ReactBlessedScreen';
 import type {Screen as BlessedScreen} from 'blessed';
-
-inject();
 
 function mountComponentIntoNode(
   componentInstance,
@@ -45,23 +43,20 @@ function batchedMountComponentIntoNode(componentInstance, options) {
 }
 
 export const render = (
-  nextElement: Element<any>,
+  element: Element<any>,
   screen: BlessedScreen
 ): ReactBlessedInstance => {
   invariant(screen, 'Could not find blessed screen');
-
-  // HACK
+  inject();
   // $FlowFixMe
-  screen.debouncedRender = debounce(() => screen.render(), 0);
-
-  // $FlowFixMe
-  const nextWrappedElement = createElement(ReactBlessedTopLevelWrapper, {
-    child: nextElement
+  const wrappedElement = createElement(ReactBlessedTopLevelWrapper, {
+    child: element
   });
-
-  const instance = instantiateReactComponent(nextWrappedElement, false);
-  ReactUpdates.batchedUpdates(batchedMountComponentIntoNode, instance, {
-    screen
-  });
+  const instance = instantiateReactComponent(wrappedElement, false);
+  ReactUpdates.batchedUpdates(
+    batchedMountComponentIntoNode,
+    instance,
+    new ReactBlessedScreen(screen)
+  );
   return new ReactBlessedInstance(instance);
 };

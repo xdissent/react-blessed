@@ -4,47 +4,40 @@ import CallbackQueue from 'react-dom/lib/CallbackQueue';
 import PooledClass from 'react/lib/PooledClass';
 import Transaction from 'react-dom/lib/Transaction';
 import ReactUpdateQueue from 'react-dom/lib/ReactUpdateQueue';
-import type {BlessedRendererOptions} from './types';
 
 const ON_BLESSED_READY_QUEUEING = {
-  initialize: function() {
+  initialize() {
     this.reactMountReady.reset();
   },
-  close: function() {
+  close() {
     this.reactMountReady.notifyAll();
   }
 };
 
 const TRANSACTION_WRAPPERS = [ON_BLESSED_READY_QUEUEING];
 
-function ReactBlessedReconcileTransaction(
-  blessedOptions: BlessedRendererOptions
-) {
+function ReactBlessedReconcileTransaction() {
   this.reinitializeTransaction();
-  this.blessedOptions = blessedOptions;
   this.reactMountReady = CallbackQueue.getPooled(this);
 }
 
 const Mixin = {
-  getTransactionWrappers: function() {
+  getTransactionWrappers() {
     return TRANSACTION_WRAPPERS;
   },
-  getReactMountReady: function() {
+  getReactMountReady() {
     return this.reactMountReady;
   },
-  getBlessedOptions: function() {
-    return this.blessedOptions;
-  },
-  getUpdateQueue: function() {
+  getUpdateQueue() {
     return ReactUpdateQueue;
   },
-  checkpoint: function() {
+  checkpoint() {
     return this.reactMountReady.checkpoint();
   },
-  rollback: function(checkpoint) {
+  rollback(checkpoint) {
     this.reactMountReady.rollback(checkpoint);
   },
-  destructor: function() {
+  destructor() {
     CallbackQueue.release(this.reactMountReady);
     this.reactMountReady = null;
   }
