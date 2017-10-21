@@ -2,7 +2,7 @@
   "name": "react-blessed",
   "version": "0.1.8",
   "description": "A react renderer for blessed.",
-  "main": "./dist/render.js",
+  "main": "./index.js",
   "scripts": {
     "animation": "babel-node ./examples/animation.jsx",
     "build": "babel ./src --out-dir ./dist",

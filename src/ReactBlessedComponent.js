@@ -1,6 +1,6 @@
 // @flow
 
-import blessed, {Node as BlessedNode} from 'blessed';
+import blessed, {type Node as BlessedNode} from 'blessed';
 import ReactMultiChild from 'react-dom/lib/ReactMultiChild';
 import invariant from 'invariant';
 import ReactBlessedReconcileTransaction from './ReactBlessedReconcileTransaction';
@@ -110,14 +110,18 @@ export default class ReactBlessedComponent {
   }
 
   createBlessedNode(parent: BlessedNode): BlessedNode {
-    const {props: {...props}, type} = this._currentElement;
+    const {screen} = this._hostContainerInfo || {};
+    invariant(screen, 'Could not find blessed screen');
+    const {props, type} = this._currentElement;
     const blessedCreator = blessed[type];
     invariant(
       typeof blessedCreator === 'function',
       `Invalid blessed element "${type}".`
     );
-    delete props.children;
-    const node = blessedCreator(solveClass(props));
+    const node = blessedCreator({
+      screen,
+      ...solveClass({...props, children: []})
+    });
     node.on('event', this._eventListener);
     parent.append(node);
     return node;
